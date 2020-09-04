@@ -1,6 +1,6 @@
 # Leaflet - Visualizing Data with Leaflet
 
-Open [link](https://mirgadir.github.io/leaflet-challenge/) to see solution.
+
 ## Background
 
 ![1-Logo](Images/1-Logo.png)
