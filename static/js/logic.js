@@ -6,7 +6,7 @@ var link1 ="static/data/earthquakes.json";
 var link2 = "static/data/PB2002_plates.json";
 
 // Perform a GET request to the query URL
-d3.json(queryUrl, function(data) {
+d3.json(link1, function(data) {
 	createFeatures(data.features);
 	//console.log(data.features);
 });
