@@ -1,23 +1,26 @@
 // Store our API endpoint as queryUrl
-var queryUrl = "http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2020-08-24&endtime=" +
-"2020-09-01";
+var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson";
 
-var link1 ="static/data/earthquakes.json";
-var link2 = "static/data/PB2002_plates.json";
+var link2 = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json";
 
 // Perform a GET request to the query URL
-d3.json(link1, function(data) {
-	createFeatures(data.features);
-	//console.log(data.features);
-});
+const earthquake = d3.json(queryUrl, function(earthquakeData) {
+	 d3.json(link2, function(tectonicData){
+	createFeatures(earthquakeData.features, tectonicData.features);
+	})
+})
 
-function createFeatures(earthquakeData){
+
+
+function createFeatures(earthquakeDataFeatures, tectonicDataFeatures){
 	function eqLabels(feature, layer) {
 		layer.bindPopup("<h3>" + feature.properties.place + "</h3><hr><p>" + Date(feature.properties.time) + "</p><hr><p>" + "Magnitude: " + feature.properties.mag + "</p>");
-		
 	}
-
-	var earthquakes = L.geoJSON(earthquakeData, {
+	function tecLables(feature, layer ){ 
+		layer.bindPopup("<h3>" + feature.properties.Name + "</h3><h4> PlateA: " + feature.properties.PlateA + "<br>PlateB:" + feature.properties.PlateB +"</h4> <hr><p>" + feature.properties.Source + "</p>"); 
+	}
+	var color="";
+	var earthquakes = L.geoJSON(earthquakeDataFeatures, {
 		pointToLayer: function (feature, latlng) {
 		
 				if (feature.properties.mag > 5){
@@ -33,15 +36,24 @@ function createFeatures(earthquakeData){
 				}else if(feature.properties.mag < 1) { 
 					color = "#b2ff66";
 				}
-				radius = feature.properties.mag;
+				radius = feature.properties.mag *20000;
 			
-			return L.circleMarker(latlng, {radius: radius, color: color, fillOpacity: 0.75, fillcolor: color })
+			return L.circle(latlng, {radius: radius, color: color, fillOpacity: 0.75, fillcolor: color })
 		}, onEachFeature: eqLabels
 	});
-	createMap(earthquakes);
-}	
+	var tectonics = L.geoJSON(tectonicDataFeatures, {
+		style: function(feature){
+		 return {color: "orange",
+				 weight: 2};
+		},
+		onEachFeature: tecLables
+	});
+	createMap(earthquakes, tectonics);
+}
 
-function createMap(earthquakes) {
+
+
+function createMap(earthquakes, tectonics) {
 	// Define streetmap and darkmap layers
 	var streetmap = L.tileLayer("https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}", {
 	  attribution: "© <a href='https://www.mapbox.com/about/maps/'>Mapbox</a> © <a href='http://www.openstreetmap.org/copyright'>OpenStreetMap</a> <strong><a href='https://www.mapbox.com/map-feedback/' target='_blank'>Improve this map</a></strong>",
@@ -79,7 +91,8 @@ function createMap(earthquakes) {
 	  "Outdoors Map": outdoors
 	};
 	var overlayMaps = {
-		Earthquakes: earthquakes
+		Earthquakes: earthquakes,
+		Tectonics: tectonics
 	};
 	// Create a new map
 	var myMap = L.map("map", {
@@ -87,7 +100,7 @@ function createMap(earthquakes) {
 	    30, 0
 	  ],
 	  zoom: 3,
-	  layers: [satmap, earthquakes]
+	  layers: [satmap, earthquakes, tectonics]
 	});
 	// Create a layer control containing our baseMaps
 	// Be sure to add an overlay Layer containing the earthquake GeoJSON
@@ -124,17 +137,5 @@ function createMap(earthquakes) {
 	}
 	legend.addTo(myMap);
 
-
-	var tectonics = d3.json(link2, function(data){
-		L.geoJson(data,{
-			style: function(feature){
-				return {
-					color: "red",
-					weight: 0.5,
-					fillOpacity: 0
-				}
-			}
-		}).addTo(myMap)
-	});
 	
 }
